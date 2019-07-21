@@ -9,4 +9,4 @@ b=new(UI.Button)
 b.text="buttontext"
 p.Add(b)
 
-b.click.Add(function() local i=0 while true do print(i) i=i+1 end end)
+b.click.Add(function() for i=1,100000 do print(i) end end)

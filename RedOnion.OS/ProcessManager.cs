@@ -28,7 +28,7 @@ namespace RedOnion.OS
 			processes.Clear();
 		}
 
-		public int UpdateMillis = 20;
+		public float UpdateMillis = 20;
 		List<ROProcess> processes = new List<ROProcess>();
 
 		public void RegisterProcess(ROProcess process)
@@ -40,7 +40,8 @@ namespace RedOnion.OS
 		{
 			// Just going to start with the normal crude behavior of
 			// running each process until it completes for simplicity.
-			UnityEngine.Debug.Log("asdf " + processes.Count);
+			//UnityEngine.Debug.Log("asdf " + processes.Count);
+
 			if (processes.Count > 0)
 			{
 				processes[0].FixedUpdate(UpdateMillis);
