@@ -2,6 +2,7 @@
 using UnityEngine;
 using KSP.UI.Screens;
 using System.Collections.Generic;
+using RedOnion.OS;
 
 namespace LiveRepl
 {
@@ -21,6 +22,8 @@ namespace LiveRepl
 
         public void Awake()
         {
+
+
 			toolbarTexture = RedOnion.UI.Element.LoadIcon(38, 38, "LiveRepl.png");
             if (ToggleGui == null) {
                 ApplicationLauncher.Instance.AddModApplication(
@@ -45,8 +48,10 @@ namespace LiveRepl
         }
 
         public void Start(){
-            repl = new KerbaluaRepl();
-        }
+			ProcessManager.Instance.Reset();
+			repl = new KerbaluaRepl();
+
+		}
 
 		// Doesn't seem to work
 		//public void OnSave(ConfigNode node)
@@ -90,7 +95,8 @@ namespace LiveRepl
 
 		void FixedUpdate()
 		{
-			repl.FixedUpdate();
+			//repl.FixedUpdate();
+			ProcessManager.Instance.FixedUpdate();
 		}
 
 		void OnGUI()

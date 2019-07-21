@@ -1,25 +1,18 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Collections.Generic;
 
-namespace RedOnion.KSP.Settings {
+namespace RedOnion.Utility.Settings {
 	static public class SavedSettings {
 		// will need some changes about loading scripts if that gets changed!
-		public static readonly string BaseScriptsPath;
-		public static readonly string SettingsFile;
-
-		static SavedSettings()
-		{
-			BaseScriptsPath = Path.Combine(KSPUtil.ApplicationRootPath, "GameData/RedOnion/Scripts");
-			SettingsFile = Path.Combine(BaseScriptsPath, ".settings");
-		}
+		public static string SettingsFile => Path.Combine(GlobalSettings.BaseScriptsPath, ".settings");
 
 		static ConfigNode LoadConfig()
 		{
 			//UnityEngine.Debug.Log("load config");
 			ConfigNode configNode;
 			if (!File.Exists(SettingsFile)) {
-				Directory.CreateDirectory(BaseScriptsPath);
+				Directory.CreateDirectory(GlobalSettings.BaseScriptsPath);
 				configNode = new ConfigNode();
 				configNode.SetValue("settingsFileExists", true,true);
 				configNode.Save(SettingsFile);

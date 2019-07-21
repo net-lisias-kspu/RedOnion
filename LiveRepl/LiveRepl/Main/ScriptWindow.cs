@@ -4,10 +4,13 @@ using System.Collections.Generic;
 using System;
 using System.IO;
 using RedOnion.KSP.Autopilot;
-using RedOnion.KSP.Settings;
+using RedOnion.Utility.Settings;
 using RedOnion.KSP.API;
 using Kerbalui.Gui;
 using LiveRepl.Other;
+using RedOnion.OS;
+using RedOnion.OS.Repl;
+using Kerbalua.MoonSharp;
 
 namespace LiveRepl
 {
@@ -22,8 +25,13 @@ namespace LiveRepl
 		public CompletionBox completionBox = new CompletionBox();
 		public AutoLayoutBox widgetBar = new AutoLayoutBox();
 		public RecentFilesList recentFiles;
-		public ReplEvaluator currentReplEvaluator;
-		public Dictionary<string, ReplEvaluator> replEvaluators = new Dictionary<string, ReplEvaluator>();
+
+		//public ReplEvaluator currentReplEvaluator;
+
+		public ReplProcess currentReplProcess;
+		public ReplProcess lastOutputtedProcess;
+		public Dictionary<string, ReplProcess> defaultReplProcesses = new Dictionary<string, ReplProcess>();
+//		public Dictionary<string, ReplEvaluator> replEvaluators = new Dictionary<string, ReplEvaluator>();
 
 		const int windowID = 0;
 		const int modalID = 1;
@@ -44,7 +52,7 @@ namespace LiveRepl
 
 		const float titleHeight = 20;
 
-		List<Evaluation> evaluationList = new List<Evaluation>();
+		//List<Evaluation> evaluationList = new List<Evaluation>();
 		bool inputIsLocked;
 		//bool evaluationNotFinished = false;
 
@@ -64,116 +72,79 @@ namespace LiveRepl
 		/// </summary>
 		CompletionManager completionManager;
 
-		public void SetCurrentEvaluator(string evaluatorName)
+		public void SetCurrentReplProcess(string engineName)
 		{
-			currentReplEvaluator = replEvaluators[evaluatorName];
-			replEvaluatorLabel.content.text = evaluatorName;
+			currentReplProcess = defaultReplProcesses[engineName];
+			replEvaluatorLabel.content.text = engineName;
 		}
 
 
-		void RunStartupScripts(string engineName)
-		{
-			if(engineName=="Lua Engine")
-			{
-				RunLuaStartupScripts();
-			}
-			if(engineName=="ROS Engine")
-			{
-				RunRosStartupScripts();
-			}
-		}
+		//void RunStartupScripts(string engineName)
+		//{
+		//	if(engineName=="Lua Engine")
+		//	{
+		//		RunLuaStartupScripts();
+		//	}
+		//	if(engineName=="ROS Engine")
+		//	{
+		//		RunRosStartupScripts();
+		//	}
+		//}
 
-		void RunLuaStartupScripts()
-		{
-			var scriptnames = AutoRun.Instance.scripts();
-			foreach(var scriptname in scriptnames)
-			{
-				string extension = Path.GetExtension(scriptname).ToLower();
-				string basename = Path.GetFileNameWithoutExtension(scriptname);
-				if (extension==".lua")
-				{
-					repl.outputBox.AddFileContent("loading "+scriptname+"...");
-					var newEvaluation = new Evaluation("require(\"" + basename + "\")",scriptname,replEvaluators["Lua Engine"]);
-					evaluationList.Add(newEvaluation);
-				}
-			}
-		}
+		//void RunLuaStartupScripts()
+		//{
+		//	var scriptnames = AutoRun.Instance.scripts();
+		//	foreach(var scriptname in scriptnames)
+		//	{
+		//		string extension = Path.GetExtension(scriptname).ToLower();
+		//		string basename = Path.GetFileNameWithoutExtension(scriptname);
+		//		if (extension==".lua")
+		//		{
+		//			repl.outputBox.AddFileContent("loading "+scriptname+"...");
+		//			var newEvaluation = new Evaluation("require(\"" + basename + "\")",scriptname,replEvaluators["Lua Engine"]);
+		//			evaluationList.Add(newEvaluation);
+		//		}
+		//	}
+		//}
 
-		void RunRosStartupScripts()
-		{
-			var scriptnames = AutoRun.Instance.scripts();
-			foreach (var scriptname in scriptnames)
-			{
-				string extension = Path.GetExtension(scriptname).ToLower();
-				string basename = Path.GetFileNameWithoutExtension(scriptname);
-				if (extension == ".ros")
-				{
-					repl.outputBox.AddFileContent("loading " + scriptname + "...");
-					var newEvaluation = new Evaluation("run \"" + scriptname+"\"", scriptname, replEvaluators["ROS Engine"]);
-					evaluationList.Add(newEvaluation);
-				}
-			}
-		}
+		//void RunRosStartupScripts()
+		//{
+		//	var scriptnames = AutoRun.Instance.scripts();
+		//	foreach (var scriptname in scriptnames)
+		//	{
+		//		string extension = Path.GetExtension(scriptname).ToLower();
+		//		string basename = Path.GetFileNameWithoutExtension(scriptname);
+		//		if (extension == ".ros")
+		//		{
+		//			repl.outputBox.AddFileContent("loading " + scriptname + "...");
+		//			var newEvaluation = new Evaluation("run \"" + scriptname+"\"", scriptname, replEvaluators["ROS Engine"]);
+		//			evaluationList.Add(newEvaluation);
+		//		}
+		//	}
+		//}
 
 		public void FixedUpdate()
 		{
-			if (evaluationList.Count!=0)
-			{
-				var currentEvaluation = evaluationList[0];
-				if (currentEvaluation.Evaluate())
-				{
-					repl.outputBox.AddReturnValue(currentEvaluation.Result);
-					evaluationList.RemoveAt(0);
-				}
-			}
-			foreach(var engineName in replEvaluators.Keys)
-			{
-				var repl = replEvaluators[engineName];
-				try
-				{
-					repl.FixedUpdate();
-				}
-				catch (Exception ex)
-				{
-					Debug.Log("Exception in REPL.FixedUpdate: " + ex.Message);
-					repl.ResetEngine();
-					RunStartupScripts(engineName);
-				}
-			}
+
 		}
 
 		public ScriptWindow(Rect param_mainWindowRect)
 		{
 			editorVisible = bool.Parse(SavedSettings.LoadSetting("editorVisible", "true"));
 
-			replEvaluators["ROS Engine"] = new RedOnionReplEvaluator()
+			defaultReplProcesses["Kerbalua"] = new ReplProcess(new KerbaluaScript());
+			ProcessManager.Instance.RegisterProcess(defaultReplProcesses["Kerbalua"]);
+			string lastEngineName = SavedSettings.LoadSetting("lastEngine", "Kerbalua");
+			if (defaultReplProcesses.ContainsKey(lastEngineName))
 			{
-				PrintAction = (str) =>
-					repl.outputBox.AddOutput(str),
-				PrintErrorAction = (str) =>
-					repl.outputBox.AddError(str)
-			};
-			RunRosStartupScripts();
-			replEvaluators["Lua Engine"] = new MoonSharpReplEvaluator()
-			{
-				PrintAction = (str) =>
-					repl.outputBox.AddOutput(str),
-				PrintErrorAction = (str) =>
-					repl.outputBox.AddError(str)
-			};
-			RunLuaStartupScripts();
-
-			string lastEngineName = SavedSettings.LoadSetting("lastEngine", "Lua Engine");
-			if (replEvaluators.ContainsKey(lastEngineName))
-			{
-				currentReplEvaluator = replEvaluators[lastEngineName];
+				currentReplProcess = defaultReplProcesses[lastEngineName];
 				replEvaluatorLabel.content.text = lastEngineName;
 			}
 			else
 			{
-				foreach (var evaluatorName in replEvaluators.Keys)
+				foreach (var evaluatorName in defaultReplProcesses.Keys)
 				{
-					currentReplEvaluator = replEvaluators[evaluatorName];
+					currentReplProcess = defaultReplProcesses[evaluatorName];
 					replEvaluatorLabel.content.text = evaluatorName;
 					SavedSettings.SaveSetting("lastEngine", evaluatorName);
 					break;
@@ -234,7 +205,7 @@ namespace LiveRepl
 				replVisible = !replVisible;
 				SavedSettings.SaveSetting("editorVisible", editorVisible.ToString());
 			}));
-			//widgetBar.renderables.Add(scriptIOTextArea);
+
 			widgetBar.renderables.Add(new Button("Save", () =>
 			{
 				scriptIOTextArea.Save(editor.content.text);
@@ -246,31 +217,23 @@ namespace LiveRepl
 			widgetBar.renderables.Add(new Button("Run Script", () =>
 			{
 				scriptIOTextArea.Save(editor.content.text);
-				repl.outputBox.AddFileContent(scriptIOTextArea.content.text);
-				evaluationList.Add(new Evaluation(editor.content.text, scriptIOTextArea.content.text, currentReplEvaluator));
+				currentReplProcess.EvaluateFile(scriptIOTextArea.content.text);
 			}));
 			widgetBar.renderables.Add(new Button("Reset Engine", () =>
 			{
-				currentReplEvaluator.ResetEngine();
-				foreach(var evaluatorname in replEvaluators.Keys)
-				{
-					if (replEvaluators[evaluatorname] == currentReplEvaluator)
-					{
-						RunStartupScripts(evaluatorname);
-					}
-				}
+				currentReplProcess.ResetProcess();
 			}));
 			widgetBar.renderables.Add(new Button("Show Hotkeys", () =>
 			{
 				PrintHotkeysInOutputArea();
 			}));
 
-			foreach (var evaluatorName in replEvaluators.Keys)
+			foreach (var engineName in defaultReplProcesses.Keys)
 			{
-				widgetBar.renderables.Add(new Button(evaluatorName, () =>
+				widgetBar.renderables.Add(new Button(engineName, () =>
 				{
-					SetCurrentEvaluator(evaluatorName);
-					SavedSettings.SaveSetting("lastEngine", evaluatorName);
+					SetCurrentReplProcess(engineName);
+					SavedSettings.SaveSetting("lastEngine", engineName);
 				}));
 			}
 			widgetBar.renderables.Add(replEvaluatorLabel);
@@ -346,28 +309,28 @@ Any other key gives focus to input box.
 			repl.inputBox.KeyBindings.Add(new EventKey(KeyCode.LeftBracket, true), () =>
 			{
 				//Debug.Log("history up");
-				repl.inputBox.content.text = currentReplEvaluator.HistoryUp();
+				repl.inputBox.content.text = currentReplProcess.SourceHistory.Up();
 				repl.inputBox.selectIndex = repl.inputBox.content.text.Length;
 				repl.inputBox.cursorIndex = repl.inputBox.content.text.Length;
 			});
 			repl.inputBox.KeyBindings.Add(new EventKey(KeyCode.Quote, true), () =>
 			{
 				//Debug.Log("history down");
-				repl.inputBox.content.text = currentReplEvaluator.HistoryDown();
+				repl.inputBox.content.text = currentReplProcess.SourceHistory.Down();
 				repl.inputBox.selectIndex = repl.inputBox.content.text.Length;
 				repl.inputBox.cursorIndex = repl.inputBox.content.text.Length;
 			});
 			repl.inputBox.KeyBindings.Add(new EventKey(KeyCode.UpArrow, true), () =>
 			{
 				//Debug.Log("history up");
-				repl.inputBox.content.text = currentReplEvaluator.HistoryUp();
+				repl.inputBox.content.text = currentReplProcess.SourceHistory.Up();
 				repl.inputBox.selectIndex = repl.inputBox.content.text.Length;
 				repl.inputBox.cursorIndex = repl.inputBox.content.text.Length;
 			});
 			repl.inputBox.KeyBindings.Add(new EventKey(KeyCode.DownArrow, true), () =>
 			{
 				//Debug.Log("history down");
-				repl.inputBox.content.text = currentReplEvaluator.HistoryDown();
+				repl.inputBox.content.text = currentReplProcess.SourceHistory.Down();
 				repl.inputBox.selectIndex = repl.inputBox.content.text.Length;
 				repl.inputBox.cursorIndex = repl.inputBox.content.text.Length;
 			});
@@ -390,19 +353,15 @@ Any other key gives focus to input box.
 			editor.KeyBindings.Add(new EventKey(KeyCode.E, true), () =>
 			{
 				scriptIOTextArea.Save(editor.content.text);
-				repl.outputBox.AddFileContent(scriptIOTextArea.content.text);
-				evaluationList.Add(new Evaluation(editor.content.text, scriptIOTextArea.content.text, currentReplEvaluator));
+				currentReplProcess.EvaluateFile(editor.content.text);
 			});
 			repl.inputBox.KeyBindings.Add(new EventKey(KeyCode.E, true), () =>
 			{
-				repl.outputBox.AddSourceString(repl.inputBox.content.text);
-				evaluationList.Add(new Evaluation(repl.inputBox.content.text, null, currentReplEvaluator));
+				currentReplProcess.EvaluateSource(repl.inputBox.content.text);
 			});
 			repl.inputBox.KeyBindings.Add(new EventKey(KeyCode.Return), () =>
 			{
-				repl.outputBox.AddSourceString(repl.inputBox.content.text);
-				// OperatingSystem.
-				evaluationList.Add(new Evaluation(repl.inputBox.content.text, null, currentReplEvaluator, true));
+				currentReplProcess.EvaluateSource(repl.inputBox.content.text, true);
 				repl.inputBox.content.text = "";
 				completionBox.content.text = "";
 			});
@@ -457,13 +416,11 @@ Any other key gives focus to input box.
 		bool hadMouseDownLastUpdate = false;
 		public void Update()
 		{
-
 			//UnityEngine.Debug.Log("blah");
 			SetOrReleaseInputLock();
 
 			completionManager.Update(hadMouseDownLastUpdate);
 			hadMouseDownLastUpdate = false;
-
 
 			//if (replVisible) {
 			//	mainWindowRect.width = buttonBarRect.width + replRect.width;
@@ -491,21 +448,17 @@ Any other key gives focus to input box.
 		void MainWindow(int id)
 		{
 
-			if (evaluationList.Count!=0
+			if (!currentReplProcess.IsIdle()
 					&& Event.current.type == EventType.KeyDown
 					&& Event.current.keyCode == KeyCode.C
 					&& Event.current.control)
 			{
 				GUILibUtil.ConsumeAndMarkNextCharEvent(Event.current);
-				evaluationList.Clear();
-				foreach(var replEvaluator in replEvaluators.Values)
-				{
-					replEvaluator.Terminate();
-				}
-				repl.outputBox.AddError("Execution Manually Terminated");
+				currentReplProcess.Interrupt();
+				currentReplProcess.PrintError("Execution Manually Terminated.");
 			}
 
-			if (evaluationList.Count != 0)
+			if (!currentReplProcess.IsIdle())
 			{
 				EventType t = Event.current.type;
 				if (t == EventType.KeyDown || t == EventType.MouseDown)
@@ -542,11 +495,11 @@ Any other key gives focus to input box.
 						{
 							recentFilesList.Add(scriptIOTextArea.content.text);
 						}
-						recentFilesList.RemoveAll((string filename) => !File.Exists(Path.Combine(SavedSettings.BaseScriptsPath, filename)));
+						recentFilesList.RemoveAll((string filename) => !File.Exists(Path.Combine(GlobalSettings.BaseScriptsPath, filename)));
 						recentFilesList.Sort((string s1, string s2) =>
 						{
-							var t1 = Directory.GetLastWriteTime(Path.Combine(SavedSettings.BaseScriptsPath, s1));
-							var t2 = Directory.GetLastWriteTime(Path.Combine(SavedSettings.BaseScriptsPath, s2));
+							var t1 = Directory.GetLastWriteTime(Path.Combine(GlobalSettings.BaseScriptsPath, s1));
+							var t2 = Directory.GetLastWriteTime(Path.Combine(GlobalSettings.BaseScriptsPath, s2));
 							if (t1 < t2) return 1;
 							if (t1 > t2) return -1;
 							return 0;
@@ -564,7 +517,7 @@ Any other key gives focus to input box.
 						{
 							recentFilesList.Add(scriptIOTextArea.content.text);
 						}
-						recentFilesList.RemoveAll((string filename) => !File.Exists(Path.Combine(SavedSettings.BaseScriptsPath, filename)));
+						recentFilesList.RemoveAll((string filename) => !File.Exists(Path.Combine(GlobalSettings.BaseScriptsPath, filename)));
 						recentFilesList.Remove(scriptIOTextArea.content.text);
 						if (recentFilesList.Count > 10)
 						{
@@ -585,6 +538,15 @@ Any other key gives focus to input box.
 				//if(repl.outputBox.HasFocus()) {
 				//	repl.inputBox.GrabFocus();
 				//}
+				if (currentReplProcess.OutputBuffer.FreshOutput 
+					|| lastOutputtedProcess != currentReplProcess)
+				{
+					repl.outputBox.content.text = currentReplProcess.OutputBuffer.GetString();
+					repl.outputBox.ResetScroll();
+				}
+
+				lastOutputtedProcess = currentReplProcess;
+
 				repl.Update(GetCurrentReplRect(), replVisible);
 			}
 

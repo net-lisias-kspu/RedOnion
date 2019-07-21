@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using MoonSharp.Interpreter;
 using UnityEngine;
@@ -7,13 +7,13 @@ using Kerbalua.Completion;
 using MoonSharp.Interpreter.Loaders;
 using RedOnion.KSP.Lua;
 using RedOnion.KSP.Autopilot;
-using RedOnion.KSP.Settings;
+using RedOnion.Utility.Settings;
 
 namespace Kerbalua.Other
 {
     public class MoonSharpReplEvaluator:ReplEvaluator
     {
-		KerbaluaScript scriptEngine;
+		OldKerbaluaScript scriptEngine;
 
 		KerbaluaExecutionManager kem = new KerbaluaExecutionManager();
 
@@ -39,7 +39,7 @@ namespace Kerbalua.Other
 
 		void InternalResetEngine()
 		{
-			scriptEngine = new KerbaluaScript();
+			scriptEngine = new OldKerbaluaScript();
 			scriptEngine.Options.DebugPrint = (string str) => {
 				PrintAction?.Invoke(str);
 			};
@@ -47,9 +47,7 @@ namespace Kerbalua.Other
 			
 			scriptEngine.Options.ScriptLoader = new FileSystemScriptLoader();
 			((ScriptLoaderBase)scriptEngine.Options.ScriptLoader).IgnoreLuaPathGlobal = true;
-			((ScriptLoaderBase)scriptEngine.Options.ScriptLoader).ModulePaths = new string[] { SavedSettings.BaseScriptsPath+"/?.lua" };
-		
-		 	
+			((ScriptLoaderBase)scriptEngine.Options.ScriptLoader).ModulePaths = new string[] { GlobalSettings.BaseScriptsPath+"/?.lua" };
 		 }
 
 		public override void ResetEngine()

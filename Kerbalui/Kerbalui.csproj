@@ -111,6 +111,10 @@
       <Project>{59399C9E-EBAC-4D7C-B2CB-6ECE22FE8D6E}</Project>
       <Name>RedOnion.ROS</Name>
     </ProjectReference>
+    <ProjectReference Include="..\RedOnion.Utility\RedOnion.Utility.csproj">
+      <Project>{6E10BD7B-3DA8-4FE3-ACF4-DB9CDC11C274}</Project>
+      <Name>RedOnion.Utility</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

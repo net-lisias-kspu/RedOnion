@@ -91,6 +91,10 @@
       <Project>{3B9ED14D-ED22-4F94-91BF-951BF9B01552}</Project>
       <Name>RedOnion.OS</Name>
     </ProjectReference>
+    <ProjectReference Include="..\RedOnion.Utility\RedOnion.Utility.csproj">
+      <Project>{6E10BD7B-3DA8-4FE3-ACF4-DB9CDC11C274}</Project>
+      <Name>RedOnion.Utility</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

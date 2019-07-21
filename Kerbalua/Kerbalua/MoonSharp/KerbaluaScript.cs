@@ -15,92 +15,223 @@ using System.Linq;
 using API = RedOnion.KSP.API;
 using RedOnion.KSP.ReflectionUtil;
 using static RedOnion.KSP.API.Reflect;
+using RedOnion.OS.Repl;
+using Kerbalua.Completion;
+using MoonSharp.Interpreter.Loaders;
+using RedOnion.Utility.Settings;
 
 namespace Kerbalua.MoonSharp
 {
-	public class KspApi
+	public class KerbaluaScript : Script, IReplEngine
 	{
-		public FlightControl FlightControl = FlightControl.GetInstance();
-		public FlightGlobals FlightGlobals = FlightGlobals.fetch;
-		public UnityEngine.Time Time = new UnityEngine.Time();
-		public Mathf Mathf = new Mathf();
-		public Scalar Scalar = new Scalar();
-		public Vec Vec = new Vec();
-		public EditorPanels EditorPanels = EditorPanels.Instance;
-		public EditorLogic EditorLogic = EditorLogic.fetch;
-		public ShipConstruction ShipConstruction = new ShipConstruction();
-		public UnityEngine.Random Random = new UnityEngine.Random();
-		public FlightDriver FlightDriver = FlightDriver.fetch;
-		public HighLogic HighLogic = HighLogic.fetch;
-		public StageManager StageManager = StageManager.Instance;
-		public PartLoader PartLoader = PartLoader.Instance;
-	}
-
-	public class UI
-	{
-		public Type Window = typeof(Window);
-		public Type Panel = typeof(Panel);
-		public Type Button = typeof(Button);
-		public Anchors Anchors = new Anchors();
-		public Layout Layout = new Layout();
-	}
-
-	public class KerbaluaScript : Script
-	{
-		public Action<string> PrintErrorAction { get; set; }
-
-		public KerbaluaScript() : base(CoreModules.Preset_Complete)
+		static KerbaluaScript()
 		{
 			UserData.RegistrationPolicy = InteropRegistrationPolicy.Automatic;
-			
 			GlobalOptions.CustomConverters
 				.SetClrToScriptCustomConversion(
 					(Script script, ModuleControlSurface m)
 						=> DynValue.FromObject(script, new LuaProxy(m)) //DynValue.NewTable(new ModuleControlSurfaceProxyTable(this, m))
 					);
-			GlobalOptions.CustomConverters
-				.SetScriptToClrCustomConversion(DataType.Function
-					, typeof(Func<object,object>), (f) => new Func<object, object>((item) =>
-					{
-						var co = CreateCoroutine(f);
-						co.Coroutine.AutoYieldCounter = 10000;
-						object retval=co.Coroutine.Resume(item);
-						if (co.Coroutine.State == CoroutineState.ForceSuspended)
-						{
-							PrintErrorAction?.Invoke("Action<object> callback unable to finish");
-							return null;
-						}
-						return retval;
-					}));
-			GlobalOptions.CustomConverters
-				.SetScriptToClrCustomConversion(DataType.Function
-					, typeof(System.Action<object>), (f) => new Action<object>((item) =>
-				{
+			// DON'T ATTEMPT TO IMPLEMENT ACTION's OR FUNC's to be passed into
+			// csharp objects for things like "foreach". The entire execution
+			// of the foreach will be uninterruptible.
 
-					var co = CreateCoroutine(f);
-					co.Coroutine.AutoYieldCounter = 10000;
-					co.Coroutine.Resume(item);
-					if (co.Coroutine.State == CoroutineState.ForceSuspended)
-					{
-						PrintErrorAction?.Invoke("Action<object> callback unable to finish");
-					}
-				}));
 			GlobalOptions.CustomConverters
 				.SetScriptToClrCustomConversion(DataType.Function
 					, typeof(UnityAction), (f) => new UnityAction(() =>
-				{
-					var co = CreateCoroutine(f);
-					co.Coroutine.AutoYieldCounter = 10000;
-					co.Coroutine.Resume();
-					if (co.Coroutine.State == CoroutineState.ForceSuspended)
 					{
-						PrintErrorAction?.Invoke("UnityAction callback unable to finish");
+						var script = (KerbaluaScript)f.Function.OwnerScript;
+						try
+						{
+							var co = script.CreateCoroutine(f);
+							co.Coroutine.AutoYieldCounter = 1000;
+							script.coroutineQueue.Enqueue(co);
+						}
+						catch(Exception ex)
+						{
+							if (ex is InterpreterException interExcept)
+							{
+								script.replProcess.PrintError(interExcept.DecoratedMessage);
+							}
+							else
+							{
+								script.replProcess.PrintError(ex.Message);
+							}
+							Debug.Log(ex.ToString());
+						}
+					}));
+		}
+
+		ReplProcess replProcess=null;
+		public KerbaluaScript() : base(CoreModules.Preset_Complete)
+		{
+			Options.DebugPrint = (string str) => {
+				replProcess?.PrintOutput(str);
+			};
+
+			Options.ScriptLoader = new FileSystemScriptLoader();
+			((ScriptLoaderBase)Options.ScriptLoader).IgnoreLuaPathGlobal = true;
+			((ScriptLoaderBase)Options.ScriptLoader).ModulePaths = new string[] { GlobalSettings.BaseScriptsPath + "/?.lua" };
+
+			Initialize();
+		}
+
+
+		Queue<DynValue> coroutineQueue = new Queue<DynValue>();
+
+		DynValue CreateCoroutine(string source)
+		{
+			DynValue co = null;
+
+				if (IncompleteLuaParsing.IsImplicitReturn(source))
+				{
+					source = "return " + source;
+				}
+
+				DynValue mainFunction = base.DoString("return function () " + source + " end");
+				co=CreateCoroutine(mainFunction);
+				co.Coroutine.AutoYieldCounter = 1000;
+			
+
+			return co;
+		}
+
+		public void SetReplProcess(ReplProcess replProcess)
+		{
+			this.replProcess = replProcess;
+		}
+
+		bool isWaitingForInput = false;
+		public bool IsWaitingForInput()
+		{
+			return isWaitingForInput;
+		}
+
+		public bool IsIdle()
+		{
+			return coroutineQueue.Count == 0;
+		}
+
+		public void Interrupt()
+		{
+			coroutineQueue.Clear();
+			isWaitingForInput = false;
+			inputStr = "";
+		}
+
+		string inputStr = "";
+		public void ReceiveInput(string str)
+		{
+			inputStr = str;
+		}
+
+		public void EvaluateSource(string source)
+		{
+			try
+			{
+				coroutineQueue.Enqueue(CreateCoroutine(source));
+			}
+			catch (Exception ex)
+			{
+				if (ex is InterpreterException interExcept)
+				{
+					replProcess.PrintError(interExcept.DecoratedMessage);
+				}
+				else
+				{
+					replProcess.PrintError(ex.Message);
+				}
+				Debug.Log(ex.ToString());
+			}
+		}
+
+		string DynValueToString(DynValue dynValue)
+		{
+			string result = "";
+
+			if (dynValue.Type == DataType.String)
+			{
+				result = "\"" + dynValue.ToObject() + "\"";
+			}
+			else if (dynValue.Type == DataType.Nil || dynValue.Type == DataType.Void)
+			{
+				result = dynValue.ToString();
+			}
+			else
+			{
+				result += dynValue.ToObject().ToString();
+			}
+
+			return result;
+		}
+
+		public void FixedUpdate(float timeAllotted)
+		{
+			if (coroutineQueue.Count > 0)
+			{
+				var coroutine = coroutineQueue.Peek();
+				DynValue result=null;
+
+				try
+				{
+					if (isWaitingForInput)
+					{
+						isWaitingForInput = false;
+						var tempstr = inputStr;
+						inputStr = "";
+						result=coroutine.Coroutine.Resume(tempstr);
 					}
-				}));
+					else
+					{
+						result=coroutine.Coroutine.Resume();
+					}
+				}
+				catch(Exception ex)
+				{
+					if (ex is InterpreterException interExcept)
+					{
+						replProcess.PrintError(interExcept.DecoratedMessage);
+					}
+					else
+					{
+						replProcess.PrintError(ex.Message);
+					}
+					Debug.Log(ex.ToString());
+				}
+
+				if (coroutine.Coroutine.State == CoroutineState.Dead)
+				{
+					coroutineQueue.Dequeue();
+					replProcess?.PrintReturnValue(DynValueToString(result));
+				}
+				else if(coroutine.Coroutine.State == CoroutineState.Suspended)
+				{
+					coroutineQueue.Enqueue(coroutineQueue.Dequeue());
+				}
+			}
+		}
+
+		public string EngineName()
+		{
+			return "Kerbalua";
+		}
+
+		public void Reset()
+		{
+			Interrupt();
+			Globals.Clear();
+			Globals.MetaTable = null;
+			Globals.RegisterCoreModules(CoreModules.Preset_Complete);
+
+			Initialize();
+		}
+
+		void Initialize()
+		{
 			Globals.MetaTable = API.LuaGlobals.Instance;
-			//Globals["Vessel"] = FlightGlobals.ActiveVessel;
+
 			var defaultMappings = NamespaceMappings.DefaultAssemblies;
-			//Globals["KSP"] = new KspApi();
+
 			Globals["new"] = Constructor.Instance;
 			Globals["static"] = new Func<object, DynValue>((o) =>
 			{
@@ -112,19 +243,25 @@ namespace Kerbalua.MoonSharp
 			});
 			Globals["gettype"] = new Func<object, DynValue>((o) =>
 			{
-				if (o is DynValue d && d.Type==DataType.UserData)
+				if (o is DynValue d && d.Type == DataType.UserData)
 				{
-					return DynValue.FromObject(this,d.UserData.Descriptor.Type);
+					return DynValue.FromObject(this, d.UserData.Descriptor.Type);
 				}
 				if (o is Type t)
 				{
-					return DynValue.FromObject(this,t);
+					return DynValue.FromObject(this, t);
 				}
-				return DynValue.FromObject(this,o.GetType());
+				return DynValue.FromObject(this, o.GetType());
 			});
 			Globals["assemblies"] = new Func<List<Assembly>>(() =>
 			{
 				return AppDomain.CurrentDomain.GetAssemblies().ToList();
+			});
+
+			Globals["getstring"] = new Action(() =>
+			{
+				isWaitingForInput = true;
+
 			});
 
 			Globals["assembly"] = new GetMappings();
@@ -133,64 +270,29 @@ namespace Kerbalua.MoonSharp
 			@"
 				return function(lst) for i=0,lst.Count-1 do print(i..' '..lst[i].ToString()) end end
 				");
-			//Globals["unity"] = Assembly.GetAssembly(typeof(Vector3));
-			//Globals["Assembly"] = typeof(Assembly);
-			//Assembly blah;
+
 			Globals["import"] = defaultMappings.GetNamespace("");
-			//Globals["Coll"] = allMappings.GetNamespace("System.Collections.Generic");
+
 			Globals["reldir"] = new Func<double, double, RelativeDirection>((heading, pitch) => new RelativeDirection(heading, pitch));
-			//Globals["AppDomain"] = UserData.CreateStatic(typeof(AppDomain));
-			//Globals["AssemblyStatic"] = UserData.CreateStatic(typeof(Assembly));
-			//Globals["UI"] = new UI();
-			//UserData.RegisterExtensionType(typeof(System.Linq.Enumerable));
-			//UserData.RegisterAssembly(Assembly.GetAssembly(typeof(System.Linq.Enumerable)),true);
 		}
 
-		//private Table ImporterImpl(string name)
-		//{
-		//	var a=Assembly.GetAssembly(GetType());
-
-		//}
-
-		delegate Table Importer(string name);
-
-		DynValue coroutine;
-
-		public bool Evaluate(out DynValue result)
+		public IList<string> GetCompletions(string source, int cursorPos, out int replaceStart, out int replaceEnd)
 		{
-			if (coroutine == null)
+			try
 			{
-				throw new System.Exception("Coroutine not set in KerbaluaScript");
+				return LuaIntellisense.GetCompletions(Globals, source, cursorPos, out replaceStart, out replaceEnd);
 			}
-
-			coroutine.Coroutine.AutoYieldCounter = 1000;
-			result = coroutine.Coroutine.Resume();
-
-
-			bool isComplete = false;
-			if (coroutine.Coroutine.State == CoroutineState.Dead)
+			catch (Exception e)
 			{
-				isComplete = true;
-				coroutine = null;
+				Debug.Log(e);
+				replaceStart = replaceEnd = cursorPos;
+				return new List<string>();
 			}
-
-			return isComplete;
 		}
 
-		public void SetCoroutine(string source)
+		public IList<string> GetDisplayableCompletions(string source, int cursorPos, out int replaceStart, out int replaceEnd)
 		{
-			if (IncompleteLuaParsing.IsImplicitReturn(source))
-			{
-				source = "return " + source;
-			}
-			DynValue mainFunction = base.DoString("return function () " + source + " end");
-
-			coroutine = CreateCoroutine(mainFunction);
-		}
-
-		public void Terminate()
-		{
-			coroutine = null;
+			return GetCompletions(source, cursorPos, out replaceStart, out replaceEnd);
 		}
 	}
 }

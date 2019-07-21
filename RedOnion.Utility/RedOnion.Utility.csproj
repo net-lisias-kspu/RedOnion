@@ -1,15 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <KerbalLibs Condition=" '$(KerbalLibs)' == '' And '$(OS)' == 'Windows_NT' And Exists('$(SolutionDir)\ksp')">$(SolutionDir)\ksp\KSP_x64_Data\Managed</KerbalLibs>
+  <KerbalLibs Condition=" '$(KerbalLibs)' == '' And '$(OS)' == 'Windows_NT' And Exists('$(SolutionDir)\ksp')">$(SolutionDir)\ksp\KSP_x64_Data\Managed</KerbalLibs>
     <KerbalLibs Condition=" '$(KerbalLibs)' == '' And '$(OS)' != 'Windows_NT' And Exists('$(SolutionDir)\ksp')">$(SolutionDir)\ksp\KSP_Data\Managed</KerbalLibs>
     <KerbalLibs Condition=" '$(KerbalLibs)' == '' And '$(OS)' == 'Windows_NT' ">C:\Program Files (x86)\Steam\steamapps\common\Kerbal Space Program\KSP_x64_Data\Managed</KerbalLibs>
+
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{3B9ED14D-ED22-4F94-91BF-951BF9B01552}</ProjectGuid>
+    <ProjectGuid>{6E10BD7B-3DA8-4FE3-ACF4-DB9CDC11C274}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>RedOnion.OS</RootNamespace>
-    <AssemblyName>RedOnion.OS</AssemblyName>
+    <RootNamespace>RedOnion.Utility</RootNamespace>
+    <AssemblyName>RedOnion.Utility</AssemblyName>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <ReleaseVersion>0.3.0</ReleaseVersion>
   </PropertyGroup>
@@ -32,7 +33,11 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
-        <Reference Include="Assembly-CSharp">
+    <Reference Include="UnityEngine">
+      <HintPath>$(KerbalLibs)\UnityEngine.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Assembly-CSharp">
       <HintPath>$(KerbalLibs)\Assembly-CSharp.dll</HintPath>
       <Private>False</Private>
     </Reference>
@@ -40,29 +45,15 @@
       <HintPath>$(KerbalLibs)\Assembly-CSharp-firstpass.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="UnityEngine">
-      <HintPath>$(KerbalLibs)\UnityEngine.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ProcessManager.cs" />
+    <Compile Include="IOUtility.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Process\ROProcess.cs" />
-    <Compile Include="Process\ProcessOutputBuffer.cs" />
-    <Compile Include="Repl\ReplProcess.cs" />
-    <Compile Include="Repl\ReplHistory.cs" />
-    <Compile Include="Repl\IReplEngine.cs" />
+    <Compile Include="Settings\SavedSettings.cs" />
+    <Compile Include="Settings\GlobalSettings.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Folder Include="Process\" />
-    <Folder Include="Repl\" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\RedOnion.Utility\RedOnion.Utility.csproj">
-      <Project>{6E10BD7B-3DA8-4FE3-ACF4-DB9CDC11C274}</Project>
-      <Name>RedOnion.Utility</Name>
-    </ProjectReference>
+    <Folder Include="Settings\" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

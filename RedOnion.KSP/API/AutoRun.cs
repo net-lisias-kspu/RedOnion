@@ -1,7 +1,7 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using RedOnion.KSP.Settings;
+using RedOnion.Utility.Settings;
 
 namespace RedOnion.KSP.API
 {
