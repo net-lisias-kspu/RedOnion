@@ -133,7 +133,7 @@ namespace LiveRepl
 			editorVisible = bool.Parse(SavedSettings.LoadSetting("editorVisible", "true"));
 
 			defaultReplProcesses["Kerbalua"] = new ReplProcess(new KerbaluaScript());
-			ProcessManager.Instance.RegisterProcess(defaultReplProcesses["Kerbalua"]);
+			ExecutionManager.Instance.RegisterProcess(defaultReplProcesses["Kerbalua"]);
 			string lastEngineName = SavedSettings.LoadSetting("lastEngine", "Kerbalua");
 			if (defaultReplProcesses.ContainsKey(lastEngineName))
 			{

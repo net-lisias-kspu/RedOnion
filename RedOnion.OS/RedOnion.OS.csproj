@@ -46,17 +46,24 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ProcessManager.cs" />
+    <Compile Include="ExecutionManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Process\ROProcess.cs" />
     <Compile Include="Process\ProcessOutputBuffer.cs" />
     <Compile Include="Repl\ReplProcess.cs" />
     <Compile Include="Repl\ReplHistory.cs" />
     <Compile Include="Repl\IReplEngine.cs" />
+    <Compile Include="IExecutable.cs" />
+    <Compile Include="Executors\NormalExecutor.cs" />
+    <Compile Include="Executors\OneShotExecutor.cs" />
+    <Compile Include="Executors\PriorityExecutor.cs" />
+    <Compile Include="Executors\RealtimeExecutor.cs" />
+    <Compile Include="Executors\IdleExecutor.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Process\" />
     <Folder Include="Repl\" />
+    <Folder Include="Executors\" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\RedOnion.Utility\RedOnion.Utility.csproj">

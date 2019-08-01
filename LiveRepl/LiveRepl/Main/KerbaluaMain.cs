@@ -48,7 +48,7 @@ namespace LiveRepl
         }
 
         public void Start(){
-			ProcessManager.Instance.Reset();
+			ExecutionManager.Instance.Reset();
 			repl = new KerbaluaRepl();
 
 		}
@@ -96,7 +96,7 @@ namespace LiveRepl
 		void FixedUpdate()
 		{
 			//repl.FixedUpdate();
-			ProcessManager.Instance.FixedUpdate();
+			ExecutionManager.Instance.FixedUpdate();
 		}
 
 		void OnGUI()
