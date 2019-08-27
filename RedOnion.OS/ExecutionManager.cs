@@ -46,8 +46,8 @@ namespace RedOnion.OS
 		// for the first half of execution time. Only run oneshot until 40%
 		// remains (at most). Only run idle until 60% remains.
 		static public double RealtimeFractionalLimit = 0.5;
-		static public double OneShotFractionalLimit = 0.6;
-		static public double IdleFractionalLimit = 0.4;
+		static public double OneShotFractionalLimit = 0.4;
+		static public double IdleFractionalLimit = 0.6;
 		static public double OneShotForceExecuteTime = 1;
 		static public double IdleForceExecuteTime = 1;
 

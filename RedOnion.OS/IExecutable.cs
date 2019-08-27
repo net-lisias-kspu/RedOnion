@@ -1,6 +1,9 @@
 using System;
 namespace RedOnion.OS
 {
+	/// <summary>
+	/// Interface for an object that can be executed for a given ammount of milliseconds
+	/// </summary>
 	public interface IExecutable
 	{
 		/// <summary>
