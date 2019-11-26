@@ -153,6 +153,10 @@
       <Project>{7A943166-A67E-420A-BCA0-5231D57A18BD}</Project>
       <Name>Kerbalui</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Kerbnlua\Kerbnlua.csproj">
+      <Project>{7E1B33D1-400D-42E5-9719-A0FCBB333898}</Project>
+      <Name>Kerbnlua</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="LiveRepl\" />

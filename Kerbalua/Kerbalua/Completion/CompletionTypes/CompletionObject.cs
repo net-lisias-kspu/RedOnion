@@ -89,8 +89,13 @@ namespace Kerbalua.Completion.CompletionTypes
 				return GetCompletionObject(dynValue);
 			}
 
-			if (obj.GetType().Name=="RuntimeType")
+			if (obj is Type type)
 			{
+				if (type.IsEnum)
+				{
+					Complogger.Log("obj is an enum -> InstanceStatic "+type.Name);
+					return new InstanceStaticCompletion(type);
+				}
 				Complogger.Log("obj is runtimetype -> RuntimeType");
 				return new RuntimeTypeCompletion(obj as Type);
 			}

@@ -1,5 +1,6 @@
 using System;
 using NLua;
+using RedOnion.KSP.API;
 using UnityEngine;
 
 namespace Kerbnlua
@@ -10,6 +11,7 @@ namespace Kerbnlua
 		public KeraLua.Lua runningThread;
 		public Action<string> PrintAction;
 		public Action<string> PrintErrorAction;
+		private int hookCount=1000;
 
 		public KerbnluaScript()
 		{
@@ -18,6 +20,14 @@ namespace Kerbnlua
 			state["os"]=null;
 			state["debug"]=null;
 			state["io"]=null;
+			state["sethookcount"]=new Action<int>(sethookcount);
+			state["time"]=new Func<double>(() => Planetarium.GetUniversalTime());
+			state["hook"]=new Func<int>(() => hookCount);
+		}
+
+		public void sethookcount(int d)
+		{
+			hookCount=d;
 		}
 
 		private void AutoyieldHook(IntPtr luaState, IntPtr ar)
@@ -44,6 +54,7 @@ namespace Kerbnlua
 			//Debug.Log("top is " + state.State.GetTop());
 			//Debug.Log("Status: "+status);
 			//state.State.Pop(2);
+
 			var nretvals=runningThread.GetTop();
 			runningThread.XMove(state.State, nretvals);
 
@@ -80,7 +91,7 @@ namespace Kerbnlua
 		}
 		public void SetSource(string source)
 		{
-			state.State.SetHook(AutoyieldHook, KeraLua.LuaHookMask.Count, 1000);
+			state.State.SetHook(AutoyieldHook, KeraLua.LuaHookMask.Count, hookCount);
 			runningThread=state.State.NewThread();
 			runningThread.LoadString(source);
 		}

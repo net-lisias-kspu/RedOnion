@@ -5,15 +5,24 @@ using System.Reflection;
 using System.Text;
 using Kerbalua.Completion.CompletionTypes;
 using MoonSharp.Interpreter;
+using static RedOnion.KSP.Debugging.QueueLogger;
 
 namespace Kerbalua.Completion
 {
 	public class CompletionReflectionUtil
 	{
 		static HashSet<string> HiddenMethodNames=new HashSet<string>{"Equals","GetHashCode","GetType","ToString"};
-		static public IList<string> GetMemberNames(Type t,BindingFlags flags=BindingFlags.Default)
+		static public IList<string> GetMemberNames(Type t, BindingFlags flags = BindingFlags.Default)
 		{
 			var strs = new HashSet<string>();
+
+			foreach (var type in t.GetNestedTypes())
+			{
+				Complogger.Log("getting type "+type);
+				if (type.IsSpecialName)
+					continue;
+				strs.Add(type.Name);
+			}
 
 			foreach (var ev in t.GetEvents())
 			{
@@ -24,6 +33,9 @@ namespace Kerbalua.Completion
 
 			foreach (var field in t.GetFields(flags))
 			{
+				if (field.IsSpecialName)
+					continue;
+
 				if (field.GetCustomAttribute<MoonSharpHiddenAttribute>()!=null)
 				{
 					continue;
@@ -33,6 +45,9 @@ namespace Kerbalua.Completion
 			}
 			foreach (var property in t.GetProperties(flags))
 			{
+				if (property.IsSpecialName)
+					continue;
+
 				if (property.GetCustomAttribute<MoonSharpHiddenAttribute>()!=null)
 				{
 					continue;

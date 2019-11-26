@@ -23,7 +23,7 @@ namespace Kerbalua.Scripting
 		private int execlimit = defaultExecLimit;
 		private const int defaultExecLimit=500;
 		private const int execLimitMin=100;
-		private const int execLimitMax=1000;
+		private const int execLimitMax=1000000000;
 		static KerbaluaScript _instance;
 		public static KerbaluaScript Instance
 		{
@@ -149,9 +149,13 @@ namespace Kerbalua.Scripting
 		public void Terminate()
 		{
 			coroutine = null;
-			process.shutdown -= Terminate;
-			process.terminate();
-			process = null;
+			if (process!=null)
+			{
+				process.shutdown -= Terminate;
+				process.terminate();
+				process = null;
+			}
+
 			sleepwatch.Reset();
 			sleeptimeMillis=0;
 		}
