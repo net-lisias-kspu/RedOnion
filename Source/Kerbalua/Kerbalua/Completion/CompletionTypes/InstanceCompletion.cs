@@ -51,7 +51,11 @@ namespace Kerbalua.Completion.CompletionTypes
 			Complogger.Log("type is "+type+", member name is "+getMember.Name);
 			if (CompletionReflectionUtil.TryGetField(type, getMember.Name, out FieldInfo fieldInfo, CompletionReflectionUtil.AllPublic))
 			{
+#if net4
 				if (fieldInfo.GetCustomAttribute<MoonSharpHiddenAttribute>()!=null)
+#else
+				if (null != Net35.AssSaver.GetCustomAttribute<MoonSharpHiddenAttribute>(fieldInfo))
+#endif
 				{
 					completionObject=null;
 					return false;
@@ -71,16 +75,28 @@ namespace Kerbalua.Completion.CompletionTypes
 			}
 
 			// This can be active when we have agreed on an attribute to use.
+#if net4
 			if (type.GetCustomAttribute<SafeProps>()!=null)
+#else
+			if (null != Net35.AssSaver.GetCustomAttribute<SafeProps>(type))
+#endif
 			{
 				if (CompletionReflectionUtil.TryGetProperty(type, getMember.Name, out PropertyInfo propertyInfo, CompletionReflectionUtil.AllPublic))
 				{
+#if net4
 					if (propertyInfo.GetCustomAttribute<MoonSharpHiddenAttribute>()!=null)
+#else
+					if (null != Net35.AssSaver.GetCustomAttribute<MoonSharpHiddenAttribute>(propertyInfo))
+#endif
 					{
 						completionObject=null;
 						return false;
 					}
-					var propObj = propertyInfo.GetValue(obj);
+#if net4
+					var propObj = propertyInfo.GetValue(null);
+#else
+					var propObj = propertyInfo.GetValue(null, null);
+#endif
 					if (propObj==null)
 					{
 						completionObject=new InstanceStaticCompletion(type);

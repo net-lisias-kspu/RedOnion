@@ -17,8 +17,12 @@ namespace RedOnion.Shell
 		{
 			public ShellGlobals()
 			{
+#if net4
 				Add(typeof(ZipArchive));
 				Add(typeof(ZipArchiveMode));
+#else
+				// E agora Joseh?
+#endif
 				Add(typeof(Stream));
 				Add(typeof(FileStream));
 				Add(typeof(Directory));

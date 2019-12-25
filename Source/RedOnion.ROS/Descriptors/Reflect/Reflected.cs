@@ -51,7 +51,11 @@ namespace RedOnion.ROS
 			public Reflected(Type type) : this(type.Name, type) { }
 			public Reflected(string name, Type type) : base(name, type)
 			{
-				callableMemberName = type.GetCustomAttribute<CallableAttribute>()?.Name;
+#if net4
+                callableMemberName = type.GetCustomAttribute<CallableAttribute>()?.Name;
+#else
+				callableMemberName = Net35.AssSaver.GetCustomAttribute<CallableAttribute>(type)?.Name;
+#endif
 				foreach (var member in GetMembers(type, null, false))
 				{
 					try

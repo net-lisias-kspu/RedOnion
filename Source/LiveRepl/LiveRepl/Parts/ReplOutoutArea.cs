@@ -29,7 +29,11 @@ namespace LiveRepl.Parts
 			if(outputBuffer.Length > OUTPUT_LENGTH_LIMIT)
 			{
 				editingArea.Text=outputBuffer.ToString();
+#if net4
 				outputBuffer.Clear();
+#else
+				outputBuffer.Length = 0;
+#endif
 			}
 		}
 
@@ -42,7 +46,11 @@ namespace LiveRepl.Parts
 		public void Clear()
 		{
 			editingArea.Text = "";
+#if net4
 			outputBuffer.Clear();
+#else
+			outputBuffer.Length = 0;
+#endif
 			CommonOutputProcessing();
 			needsResize=true;
 		}
@@ -87,7 +95,11 @@ namespace LiveRepl.Parts
 				if (outputBuffer.Length>OUTPUT_LENGTH_LIMIT)
 				{
 					editingArea.Text=outputBuffer.ToString();
+#if net4
 					outputBuffer.Clear();
+#else
+					outputBuffer.Length = 0;
+#endif
 				}
 
 				int diff=editingArea.Text.Length+outputBuffer.Length-OUTPUT_LENGTH_LIMIT;
@@ -99,7 +111,11 @@ namespace LiveRepl.Parts
 				{
 					editingArea.Text=editingArea.Text+outputBuffer;
 				}
+#if net4
 				outputBuffer.Clear();
+#else
+				outputBuffer.Length = 0;
+#endif
 				SetChildRect();
 			}
 

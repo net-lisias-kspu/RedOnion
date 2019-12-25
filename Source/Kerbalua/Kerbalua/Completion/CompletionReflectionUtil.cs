@@ -30,9 +30,13 @@ namespace Kerbalua.Completion
 				strs.Add(ev.Name);
 			}
 
-			foreach (var field in t.GetFields(flags))
+			foreach (FieldInfo field in t.GetFields(flags))
 			{
+#if net4
 				if (field.GetCustomAttribute<MoonSharpHiddenAttribute>()!=null)
+#else
+				if (null != Net35.AssSaver.GetCustomAttribute<MoonSharpHiddenAttribute>(field))
+#endif
 				{
 					continue;
 				}
@@ -41,9 +45,13 @@ namespace Kerbalua.Completion
 				//strs.Add("field "+field.Name+" "+field.IsSpecialName);
 				strs.Add(field.Name);
 			}
-			foreach (var property in t.GetProperties(flags))
+			foreach (PropertyInfo property in t.GetProperties(flags))
 			{
+#if net4
 				if (property.GetCustomAttribute<MoonSharpHiddenAttribute>()!=null)
+#else
+				if (null != Net35.AssSaver.GetCustomAttribute<MoonSharpHiddenAttribute>(property))
+#endif
 				{
 					continue;
 				}
@@ -53,13 +61,17 @@ namespace Kerbalua.Completion
 					strs.Add(property.Name);
 				}
 			}
-			foreach (var method in t.GetMethods(flags))
+			foreach (MethodInfo method in t.GetMethods(flags))
 			{
 				if (HiddenMethodNames.Contains(method.Name))
 				{
 					continue;
 				}
+#if net4
 				if (method.GetCustomAttribute<MoonSharpHiddenAttribute>()!=null)
+#else
+				if (null != Net35.AssSaver.GetCustomAttribute<MoonSharpHiddenAttribute>(method))
+#endif
 				{
 					continue;
 				}
@@ -163,7 +175,11 @@ namespace Kerbalua.Completion
 
 			if (TryGetMethod(type, getMember.Name, out MethodInfo methodInfo, flags))
 			{
+#if net4
 				if (methodInfo.GetCustomAttribute<MoonSharpHiddenAttribute>()!=null)
+#else
+				if (null != Net35.AssSaver.GetCustomAttribute<MoonSharpHiddenAttribute>(methodInfo))
+#endif
 				{
 					completionObject=null;
 					return false;
@@ -182,7 +198,11 @@ namespace Kerbalua.Completion
 
 			if (TryGetProperty(type, getMember.Name, out PropertyInfo propertyInfo, flags))
 			{
+#if net4
 				if (propertyInfo.GetCustomAttribute<MoonSharpHiddenAttribute>()!=null)
+#else
+				if (null != Net35.AssSaver.GetCustomAttribute<MoonSharpHiddenAttribute>(propertyInfo))
+#endif
 				{
 					completionObject=null;
 					return false;
@@ -195,7 +215,7 @@ namespace Kerbalua.Completion
 
 			if (TryGetField(type, getMember.Name, out FieldInfo fieldInfo, flags))
 			{
-				if (fieldInfo.GetCustomAttribute<MoonSharpHiddenAttribute>()!=null)
+				if (null != Net35.AssSaver.GetCustomAttribute<MoonSharpHiddenAttribute>(fieldInfo))
 				{
 					completionObject=null;
 					return false;

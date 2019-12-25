@@ -64,15 +64,23 @@ namespace RedOnion.Build
 					Array.Sort(infos, MetaCmp.It);
 				foreach (var info in infos)
 				{
+#if net4
 					var desc = info.GetCustomAttribute<DescriptionAttribute>()?.Description;
+#else
+					var desc = Net35.AssSaver.GetCustomAttribute<DescriptionAttribute>(info)?.Description;
+#endif
 					if (info is FieldInfo f)
 					{
 						if (f.IsStatic && f.IsInitOnly  // static readonly
 						&& f.FieldType == typeof(Type)) // Type name = ...
 						{
-							var nested = (Type)f.GetValue(null);
+							Type nested = (Type)f.GetValue(null);
 							if (desc == null)
+#if net4
 								desc = nested.GetCustomAttribute<DescriptionAttribute>(false)?.Description;
+#else
+								desc = Net35.AssSaver.GetCustomAttribute<DescriptionAttribute>(nested, false)?.Description;
+#endif
 							if (desc == null)
 								continue;
 							this.nested.Add(new Member<MemberInfo>(f, desc));
@@ -123,8 +131,13 @@ namespace RedOnion.Build
 			public static readonly IComparer<MemberInfo> It = new MetaCmp();
 			public int Compare(MemberInfo x, MemberInfo y)
 			{
+#if net4
 				var idx1 = x.GetCustomAttribute<DocIndexAttribute>()?.Index ?? -1;
 				var idx2 = y.GetCustomAttribute<DocIndexAttribute>()?.Index ?? -1;
+#else
+				var idx1 = Net35.AssSaver.GetCustomAttribute<DocIndexAttribute>(x)?.Index ?? -1;
+				var idx2 = Net35.AssSaver.GetCustomAttribute<DocIndexAttribute>(y)?.Index ?? -1;
+#endif
 				if (idx1 >= 0)
 				{
 					if (idx1 != idx2)
@@ -153,7 +166,11 @@ namespace RedOnion.Build
 				return;
 			if (!assemblies.Contains(type.Assembly))
 				return;
+#if net4
 			var docb = type.GetCustomAttribute<DocBuildAttribute>();
+#else
+			var docb = Net35.AssSaver.GetCustomAttribute<DocBuildAttribute>(type);
+#endif
 			if (docb != null && docb.AsType != null)
 			{
 				redirects[type] = docb.AsType;
@@ -164,7 +181,11 @@ namespace RedOnion.Build
 				type = type.GetGenericTypeDefinition();
 			if (type.IsGenericParameter || type.FullName == null)
 				return;
+#if net4
 			var desc = type.GetCustomAttribute<DescriptionAttribute>(false)?.Description;
+#else
+			var desc = Net35.AssSaver.GetCustomAttribute<DescriptionAttribute>(type, false)?.Description;
+#endif
 			if (desc == null || !discovered.Add(type))
 				return;
 			RegisterType(type.BaseType);
@@ -190,8 +211,13 @@ namespace RedOnion.Build
 			for (int i = 0; i < queue.size; i++)
 			{
 				var type = queue[i];
+#if net4
 				var desc = type.GetCustomAttribute<DescriptionAttribute>(false)?.Description;
 				var name = type.GetCustomAttribute<DisplayNameAttribute>(false)?.DisplayName
+#else
+				var desc = Net35.AssSaver.GetCustomAttribute<DescriptionAttribute>(type, false)?.Description;
+				var name = Net35.AssSaver.GetCustomAttribute<DisplayNameAttribute>(type, false)?.DisplayName
+#endif
 					?? (type.DeclaringType == null ? type.Name :
 					type.FullName.Substring(type.Namespace.Length + 1).Replace('+', '.') // nested type
 					).Replace('`', '.');
@@ -208,10 +234,18 @@ namespace RedOnion.Build
 					path = "RedOnion.UI/";
 				}
 				path += string.Join("/", full.Split('.')).Replace('`', '.').Replace('+', '.');
+#if net4
 				var docb = type.GetCustomAttribute<DocBuildAttribute>();
+#else
+				var docb = Net35.AssSaver.GetCustomAttribute<DocBuildAttribute>(type);
+#endif
 				if (docb != null && !string.IsNullOrEmpty(docb.Path))
 					path = docb.Path;
+#if net4
 				var creator = type.GetCustomAttribute<CreatorAttribute>();
+#else
+				var creator = Net35.AssSaver.GetCustomAttribute<CreatorAttribute>(type);
+#endif
 				if (creator != null)
 				{
 					obj2fn[type] = creator.Creator;
@@ -457,8 +491,13 @@ namespace RedOnion.Build
 			}
 			wr.WriteLine(desc == null ? "- `{0}`: {1}" : "- `{0}`: {1} - {2}",
 				name, typeMd, AddMarks(desc,
+#if net4
 				notsafe: member.info.IsDefined(typeof(UnsafeAttribute)),
 				wip: member.info.IsDefined(typeof(WorkInProgressAttribute))));
+#else
+				notsafe: member.info.IsDefined(typeof(UnsafeAttribute), true),
+				wip: member.info.IsDefined(typeof(WorkInProgressAttribute), true)));
+#endif
 		}
 		static string AddMarks(string desc, bool notsafe, bool wip)
 		{
@@ -489,8 +528,13 @@ namespace RedOnion.Build
 			if (pars.Length > 0)
 				wr.WriteLine();
 			wr.WriteLine(pars.Length == 0 ? " - {0}" : "  - {0}",
+#if net4
 				AddMarks(desc, notsafe: member.info.IsDefined(typeof(UnsafeAttribute)),
 				wip: member.info.IsDefined(typeof(WorkInProgressAttribute))));
+#else
+				AddMarks(desc, notsafe: member.info.IsDefined(typeof(UnsafeAttribute), true),
+				wip: member.info.IsDefined(typeof(WorkInProgressAttribute), true)));
+#endif
 		}
 
 		static string GetRelativePath(string fromPath, string toPath)

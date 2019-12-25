@@ -26,8 +26,11 @@ namespace RedOnion.KSP.MoonSharp.CommonAPI
 		{
 			properties[propertyInfo.Name]=new Func<DynValue>(() =>
 			{
+#if net4
 				var value=propertyInfo.GetValue(null);
-
+#else
+				var value=propertyInfo.GetValue(null, null);
+#endif
 				return DynValue.FromObject(OwnerScript, value);
 			});
 			propertyInfos[propertyInfo.Name]=propertyInfo;

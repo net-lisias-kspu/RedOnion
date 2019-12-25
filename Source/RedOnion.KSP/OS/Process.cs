@@ -143,20 +143,32 @@ namespace RedOnion.KSP.OS
 		public class ShutdownHook<T> : IDisposable
 			where T : class, IDisposable
 		{
+#if net4
 			protected WeakReference<T> _target;
+#else
+			protected WeakReference _target;
+#endif
 			public Process process { get; protected set; }
 			public T Target
 			{
 				get
 				{
+#if net4
 					T target = null;
 					return _target?.TryGetTarget(out target) == true ? target : null;
+#else
+					return _target.Target as T;
+#endif
 				}
 			}
 
 			public ShutdownHook(T target)
 			{
+#if net4
 				_target = new WeakReference<T>(target);
+#else
+				_target = new WeakReference(target);
+#endif
 				process = current;
 				process.shutdown += Shutdown;
 			}

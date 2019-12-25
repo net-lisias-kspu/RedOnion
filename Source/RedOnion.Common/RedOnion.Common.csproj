@@ -41,6 +41,7 @@
     <Compile Include="Collections\ListCore.cs" />
     <Compile Include="Collections\GenQueue.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Net35AssSaver.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -31,7 +31,11 @@ namespace RedOnion.KSP.MoonSharp.CommonAPI
 			var methods=type.GetMethods(publicStatic);
 			FillTableWithMethods(methods);
 
+#if net4
 			var callable=type.GetCustomAttribute<CallableAttribute>();
+#else
+			var callable= Net35.AssSaver.GetCustomAttribute<CallableAttribute>(type);
+#endif
 			if (callable!=null)
 			{
 				var methodInfo=type.GetMethod(callable.Name,publicStatic);
@@ -116,16 +120,7 @@ namespace RedOnion.KSP.MoonSharp.CommonAPI
 
 		Delegate GetDelegateFromMethodInfo(MethodInfo methodInfo)
 		{
-			var parameterInfos = methodInfo.GetParameters();
-			Type[] argTypes = new Type[parameterInfos.Length+1];
-			for (int i = 0; i < parameterInfos.Length; i++)
-			{
-				argTypes[i] = parameterInfos[i].ParameterType;
-			}
-			argTypes[parameterInfos.Length] = methodInfo.ReturnType;
-			Type delegateType = Expression.GetDelegateType(argTypes);
-
-			return Delegate.CreateDelegate(delegateType, methodInfo);
+			return Net35.AssSaver.GetDelegateFromMethodInfo(methodInfo);
 		}
 	}
 }

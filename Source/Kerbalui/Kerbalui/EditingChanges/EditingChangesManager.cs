@@ -6,7 +6,11 @@ namespace Kerbalui.EditingChanges
 	public class EditingChangesManager
 	{
 		public int ChangesLength => changesList.Count;
+#if net4
 		public IReadOnlyList<EditingChange> ChangesList => changesList;
+#else
+		public IEnumerable<EditingChange> ChangesList => changesList;
+#endif
 		private List<EditingChange> changesList=new List<EditingChange>();
 		public int CurrentIndex { get; private set; } = -1;
 

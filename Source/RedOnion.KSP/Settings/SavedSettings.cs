@@ -3,6 +3,8 @@ using System.IO;
 using System.Collections.Generic;
 using UnityEngine;
 
+using Path = Net35.System.IO.Path;
+
 namespace RedOnion.KSP.Settings {
 	static public class SavedSettings {
 		// will need some changes about loading scripts if that gets changed!

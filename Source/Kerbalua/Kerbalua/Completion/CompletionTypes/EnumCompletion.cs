@@ -14,7 +14,11 @@ namespace Kerbalua.Completion.CompletionTypes
 
 		public override IList<string> GetPossibleCompletions()
 		{
+#if net4
 			return type.GetEnumNames();
+#else
+			return Enum.GetNames(type);
+#endif
 		}
 
 		public override bool TryArrayAccess(CompletionOperations operations, out CompletionObject completionObject)

@@ -1,5 +1,5 @@
 using System;
-using System.IO;
+using Net35.System.IO;
 
 namespace RedOnion.KSP.Settings
 {
