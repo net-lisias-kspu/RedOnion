@@ -4,13 +4,16 @@
     <KerbalLibs Condition=" '$(KerbalLibs)' == '' And '$(OS)' == 'Windows_NT' And Exists('$(SolutionDir)\ksp')">$(SolutionDir)\ksp\KSP_x64_Data\Managed</KerbalLibs>
     <KerbalLibs Condition=" '$(KerbalLibs)' == '' And '$(OS)' != 'Windows_NT' And Exists('$(SolutionDir)\ksp')">$(SolutionDir)\ksp\KSP_Data\Managed</KerbalLibs>
     <KerbalLibs Condition=" '$(KerbalLibs)' == '' And '$(OS)' == 'Windows_NT' ">C:\Program Files (x86)\Steam\steamapps\common\Kerbal Space Program\KSP_x64_Data\Managed</KerbalLibs>
+    <KerbalLibs>../../../../../../LIB/managed/1.4.1</KerbalLibs>
+    <MunSharpLibs>../../../../../../LIB/MunSharp</MunSharpLibs>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{9A325200-04F2-42D2-994E-06E7711EF9AA}</ProjectGuid>
     <OutputType>Library</OutputType>
+    <BaseIntermediateOutputPath>..\..\obj\LiveRepl</BaseIntermediateOutputPath>
     <RootNamespace>LiveRepl</RootNamespace>
     <AssemblyName>LiveRepl</AssemblyName>
-    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <TargetFrameworkProfile />
     <ReleaseVersion>0.4.0</ReleaseVersion>
   </PropertyGroup>
@@ -18,7 +21,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>bin\Debug</OutputPath>
+    <OutputPath>..\..\bin\Debug</OutputPath>
     <DefineConstants>DEBUG;</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -27,7 +30,7 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <Optimize>true</Optimize>
-    <OutputPath>bin\Release</OutputPath>
+    <OutputPath>..\..\bin\Release</OutputPath>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <ConsolePause>false</ConsolePause>
@@ -35,9 +38,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
-    <Reference Include="Antlr4.Runtime.Standard">
-      <HintPath>..\packages\Antlr4.Runtime.Standard.4.7.1.1\lib\net35\Antlr4.Runtime.Standard.dll</HintPath>
-    </Reference>
     <Reference Include="Mono.Security">
       <HintPath>$(KerbalLibs)\Mono.Security.dll</HintPath>
       <Private>False</Private>
@@ -70,24 +70,8 @@
       <HintPath>$(KerbalLibs)\UnityEngine.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="UnityEngine.CoreModule">
-      <HintPath>$(KerbalLibs)\UnityEngine.CoreModule.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="UnityEngine.TextRenderingModule">
-      <HintPath>$(KerbalLibs)\UnityEngine.TextRenderingModule.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="UnityEngine.AnimationModule">
-      <HintPath>$(KerbalLibs)\UnityEngine.AnimationModule.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="UnityEngine.IMGUIModule">
-      <HintPath>$(KerbalLibs)\UnityEngine.IMGUIModule.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="MunSharp">
-      <HintPath>..\packages\MunSharp.2.0.0\lib\net35\MunSharp.dll</HintPath>
+      <HintPath>$(MunSharpLib)\net35\MunSharp.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -162,17 +146,14 @@
     <Folder Include="LiveRepl\Decorators\" />
     <Folder Include="LiveRepl\Execution\" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Target Name="AfterBuild">
-    <ZipDirectory SourceDirectory="..\GameData\RedOnion\Resources" Overwrite="True" DestinationFile="..\GameData\RedOnion\Resources.zip" />
+    <ZipDirectory SourceDirectory="..\..\GameData\RedOnion\Resources" Overwrite="True" DestinationFile="..\..\GameData\RedOnion\Resources.zip" />
     <ItemGroup>
       <OutputFiles Include="$(OutDir)**\*.dll" />
       <OutputFiles Include="$(OutDir)**\*.so" />
     </ItemGroup>
-    <Copy SourceFiles="@(OutputFiles)" DestinationFolder="..\GameData\RedOnion\Plugins\%(RecursiveDir)" OverwriteReadOnlyFiles="true" />
+    <Copy SourceFiles="@(OutputFiles)" DestinationFolder="..\..\GameData\RedOnion\Plugins\%(RecursiveDir)" OverwriteReadOnlyFiles="true" />
   </Target>
   <ProjectExtensions>
     <MonoDevelop>
